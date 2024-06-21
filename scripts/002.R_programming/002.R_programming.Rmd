@@ -1,0 +1,87 @@
+---
+title: "Coursera: R Programming"
+author: "Jessica Grindheim"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+    toc: yes
+    toc_float: true
+    toc_depth: 6
+    df_print: paged
+  pdf_document: 
+    toc: yes
+    toc_depth: 6
+latex_engine: xelatex
+geometry: left = 1in, right = 1in, top = 1in, bottom = 1in
+---
+
+```{r setup , include=FALSE}
+knitr::opts_chunk$set(
+    echo = F
+  , message = F
+  , warning = F
+  , fig.fullwidth = T
+  , fig.align = "center"
+  , fig.margin = T
+  , tidy.opts = list(width.cutoff=80)
+  ) 
+
+# the following colors the boxes in knit html
+# https://www.r-bloggers.com/2017/06/pretty-errors-warnings-and-messages-in-r-markdown/
+knitr::knit_hooks$set(
+   error = function(x, options) {
+     paste('\n\n<div class="alert alert-danger">',
+           gsub('##', '\n', gsub('^##\ Error', '**Error**', x)),
+           '</div>', sep = '\n')
+   },
+   warning = function(x, options) {
+     paste('\n\n<div class="alert alert-warning">',
+           gsub('##', '\n', gsub('^##\ Warning:', '**Warning**', x)),
+           '</div>', sep = '\n')
+   },
+   message = function(x, options) {
+     paste('\n\n<div class="alert alert-info">',
+           gsub('##', '\n', x),
+           '</div>', sep = '\n')
+   }
+)
+```
+
+
+# Background
+
+* **Goals**  
+  * Take notes during the course  
+  * Do necessary exercises  
+  
+
+
+
+```{r, include = F}
+library("here")
+source(here::here("scripts","002.R_programming","002.config.R"))
+
+```
+
+# Module 1
+
+# Module 2
+
+# Module 3
+
+# Module 4
+
+
+
+# Session info
+
+```{r}
+
+sessionInfo()
+knitr::knit_exit()
+```
+
+
