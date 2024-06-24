@@ -68,7 +68,230 @@ source(here::here("scripts","002.R_programming","002.config.R"))
 
 # Module 1
 
+* **Data Types- R objects and attributes**  
+  * **attributes**  
+    * names, dimnames  
+    * dimensions  
+    * class    
+    * length  
+    * other user-defined attributes  
+* **Data Types- Matrices**  
+  * matrices are just a vector with a dimension attribute  
+  * creating them is a pain in the butt becuase they are created column-wise (fill up first column with vector, then go to second column, ....)  
+* **Data Types- Missing values**   
+  * **NA**  
+  * **NaN**  
+    * not a number  
+  * NaN is also NA, but not the reverse  
+* **Data Types- Data Frames**  
+  * matrices have to have the same type of value (becuase they are a vector), but data frames can have different types of values.  
+    * coerce a data frame with many different types to a matrix?  The values will be coerced to the least common denominator (maybe character)  
+
+* **reading data**   
+  * dump (the opposite of source!)  
+  * load is for reading files that were written into binary  
+  * read.table will auto-skip any lines that being with a "#* symbol!  read.csv is the same, but assume comma-delimiting  and header is always = T  
+  * reading large datastes with read.table  
+    *  nrows argument is nice- juust read in a few rows so you can look without reading the whole thing in!  
+* **dumping and dputting**  
+  * dputting R objects  
+    * writes R code that can be used to constructs R code to recreate an object!  awesome for stack overflow!  Can also save the code as .R   
+  * dump is like dput, but you can do it on a bunch of objects  
+  
+* **Data Types- **  
+* **Data Types- **  
+* **Data Types- **  
+
+## quiz 
+
+```{r}
+# read in data
+DAT = read.csv( here::here(
+  "rawdata"
+  , "002.R_programming"
+  , "module.1"
+  , "hw1_data.csv"
+))
+```
+
 # Module 2
+
+* **Control structures in R: if-else**  
+  * while (a loop that will stop)  
+    * be careful, can accidentally create a endless loop  
+  * break  
+  * repeat  
+    * initiates an infinite loop  
+    * only way to stop is to call break()  
+    * helpful if stats optimization  
+    * probably better to use a for loop with a hard stop because this might work forever  
+
+* **formal arguments**  
+  * "..." argument  
+     * a variable number of arguments passed onto other functions
+* **scoping**  
+  * 
+
+## programming assignment 
+
+### pollutantmean
+
+* Write a function named 'pollutantmean' that calculates the mean of a pollutant (sulfate or nitrate) across a specified list of monitors. The function 'pollutantmean' takes three arguments: 'directory', 'pollutant', and 'id'. Given a vector monitor ID numbers, 'pollutantmean' reads that monitors' particulate matter data from the directory specified in the 'directory' argument and returns the mean of the pollutant across all of the monitors, ignoring any missing values coded as NA. A prototype of the function is as follows  
+
+```{r}
+
+
+pollutantmean = function(directory = here::here( "rawdata", "002.R_programming" , "module.2" , "specdata"), pollutant = c("sulfate","nitrate"), id = 1:10){
+  
+  # all files
+  files = list.files(directory, full.names = T)
+  # subset of files with specified IDs
+  # only works becuase of the naming of the files matches the order of the files.  Dumb.
+  files = sapply( id , function(i){
+    files[i]
+  })
+  
+  # read in files and make a table
+  tRes = lapply( files, function(f){
+    D = read.csv( f )
+  return(D) })
+  DAT = dplyr::bind_rows(tRes)
+  
+  # return mean of the pollutant
+  res = mean( DAT[,pollutant[1]], na.rm = T )
+  return(res) }
+
+# make sure the results match the example
+pollutantmean(
+  "pollutant" = "sulfate"
+  , "id" =  1:10
+)
+
+pollutantmean(
+  "pollutant" = "nitrate"
+  , "id" =  70:72
+)
+pollutantmean(
+  "pollutant" = "nitrate"
+  , "id" =  23
+)
+
+```
+
+### complete
+* Write a function that reads a directory full of files and reports the number of completely observed cases in each data file. The function should return a data frame where the first column is the name of the file and the second column is the number of complete cases. A prototype of this function follows  
+
+```{r}
+
+complete = function( directory = here::here( "rawdata", "002.R_programming" , "module.2" , "specdata"), id = 1:332 ){
+   # all files
+  files = list.files(directory, full.names = T)
+  # loop through files. read in, count complete cases
+  # return a dataframe of results
+  tRes = data.frame(t( sapply( id, function(i){
+    # init
+    toReturn = list()
+    # read in data
+    D = read.csv( files[i] )
+    # count complete cases
+    count = nrow( D[complete.cases(D), ] )
+    
+    # finalize
+    toReturn[[ "id" ]] = i
+    toReturn[[ "nobs" ]] = count
+    
+  return(toReturn) }) ))
+  # format tRes
+  rownames(tRes) = NULL
+  for (c in colnames(tRes)){ tRes[,c] = unlist(tRes[,c]) }
+  
+return(tRes) }
+
+# make sure the results match the example
+
+
+
+complete(
+  "id" = c(2, 4, 8, 10, 12)
+  )
+complete(
+  "id" =30:25
+  )
+complete(
+  "id" = 3
+  )
+```
+
+### corr
+
+* Write a function that takes a directory of data files and a threshold for complete cases and calculates the correlation between sulfate and nitrate for monitor locations where the number of completely observed cases (on all variables) is greater than the threshold. The function should return a vector of correlations for the monitors that meet the threshold requirement. If no monitors meet the threshold requirement, then the function should return a numeric vector of length 0. A prototype of this function follows  
+
+
+```{r}
+
+corr = function( directory = here::here( "rawdata", "002.R_programming" , "module.2" , "specdata"), threshold = 0){
+  
+  # all files
+  files = list.files(directory, full.names = T)
+  
+  # get a table counting complete cases
+  D.complete = complete()
+  
+  # filter to min number complete cases
+  D.complete = D.complete[D.complete[,"nobs"] > threshold, ]
+  
+  # loop through files with min complete cases
+  correlation = c()
+  for (id in D.complete$id){
+       # file of interest
+    f = files[id]
+    # read in data
+    DAT = read.csv(f)
+    DAT = DAT[complete.cases(DAT[,c("nitrate","sulfate")]),] # subset to complete cases of variables
+    # correlate
+    res = cor( 
+      "x" = DAT$nitrate
+      , "y" = DAT$sulfate
+     
+      )
+    correlation = c(correlation, res)
+  }
+
+  # return vector of correlations
+  return(correlation)
+  
+  
+}
+
+
+
+# make sure the results match the example
+
+
+
+cr <- corr( 
+  "threshold" = 150
+  )
+head(cr)
+summary(cr)
+
+
+cr <- corr( 
+  "threshold" = 400
+  )
+head(cr)
+summary(cr)
+
+
+cr <- corr( 
+  "threshold" = 5000
+  )
+summary(cr)
+length(cr)
+
+```
+
+
 
 # Module 3
 
