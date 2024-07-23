@@ -358,6 +358,206 @@ print(c(n, round(cr, 4)))
 
 # Module 3
 
+## apply
+* works on the margins of an array  
+  
+```{r}
+
+apply(
+  "X" = matrix( rnorm(200), 20 , 10) # 20 rows, 10 columns
+  , "MARGIN" = 1  # 1 for rows, 2 for columns
+  , "FUN" = mean 
+    )
+
+# functions that do it very fast, faster than apply
+args(rowSums)
+args(rowMeans)
+args(colSums)
+args(colMeans)
+
+```
+
+## mapply
+* multivariate version of other apply  
+  * suppose you have two lists and the elements of list1 are used for arg1 and the elements of list2 are used for arg2  
+
+  
+```{r}
+# different setup than lapply or sapply because giving it an unknown number of lists
+mapply(
+  "FUN" =  # number of args has to be at least as many as the number of lists
+  , ... # where you pass lists to mapply
+  , "MoreArgs" = NULL
+  )
+
+list( rep(1,4)
+      , rep(2,3)
+      , rep(3,2)
+      , rep(4,1) 
+      )
+
+mapply( rep # repeats x (first arg) and a number of times
+        , 1:4 # first list/vector
+        , 4:1 # second list/vector
+        )
+```
+## tapply
+* applied over subsets of a vector  
+  
+```{r}
+
+# generate the mean of subgroups
+X = c( rnorm(10), runif(10), rnorm(10,1) ) # vector of length 30
+f = gl(3,10) # generates 3 factor levels each of length of 10
+
+tapply(
+  "X" = X # a vector
+  , "INDEX" = f  # a vector of the same length of X which indentifies groups. Probably should be a factor?
+  , "FUN" = mean # function you want to do to some subsets of X
+
+  )
+
+tapply(
+  "X" = X # a vector
+  , "INDEX" = f  # a vector of the same length of X which indentifies groups. Probably should be a factor?
+  , "FUN" = range # function you want to do to some subsets of X
+
+  )
+```
+
+
+## split
+* takes a vector of other objects and splits it into groups determined by a factor or list of factors  
+* use in conjuction with sapply or lapply  
+* nice because can split complicated objects
+
+```{r}
+
+X = c( rnorm(10), runif(10), rnorm(10,1) ) # vector of length 30
+f = gl(3,10) # generates 3 factor levels each of length of 10
+
+
+
+split( # returns a list that can be putinto lapply or sapply
+  "x" = X  # vector/list/dataframe
+  , "f" = f # factor or list of factors
+  )
+
+
+# tapply could do this too, just an example
+lapply(
+  split( # returns a list that can be putinto lapply or sapply
+    "x" = X  # vector/list/dataframe
+    , "f" = f # factor or list of factors
+  )
+  , mean
+)
+
+# splitting a dataframe
+library(datasets)
+head(airquality)
+# want to calculate mean of temp, wind, etc by month
+# so split by month, then calculate the means
+
+s = split(
+  "x" = airquality
+  , "f" = airquality$Month
+)
+sapply( s, function(x){
+  colMeans( x[,c("Ozone", "Solar.R", "Wind")] , na.rm = T)
+})
+
+# splitting on more than 1 level
+x = rnorm(10)
+f1 = gl(2,5) # factor 1
+f2 = gl(5,2) # factor 2
+ 
+interaction(f1,f2) # combo factor 1+2
+
+split(
+  "x" = x
+  , "f" = list(f1,f2) # can call interaction(f1,f2) for you!
+  , "drop" = T # drops empty levels created by splitting (some emptly levels can be created if no instances)
+)
+
+
+```
+
+## debugging tools
+* they come in R, not part of a package  
+* can be useful in figuring out what's wrong when you know there's a problem  
+* **How do you know there's a problem?**  
+  * message: could be nothing  
+  * warning: next level up, doesn't have to stop the function.  Something unexpected happened.    
+  * error:  fatal problem, execution stops (from stop() function)      
+  * condition:  a generic concept that something unexpected can occur.  Programmers can create their own conditions    
+  * invisible: a function that prevents auto-printing!
+  
+
+* **traceback**  
+  * 
+* **debug**  
+  * flags that function for debug mode.  Anytime that function is called, it will halt execution of the function at the first line in a browser and can run through the function expression by expression  
+* **browser**  
+  * like debug, can stick the browser call anywhere in the code and whenever it is called, can go line-by-line from there  
+* **trace**  
+  * allows you to insert debugging code into a function without editing the function- useful when you're debugging somebody else's code like in a package  
+* **recover**  
+  * related to traceback  
+  * when you get an error, usually you get a message and go back to the console  
+  * can change the default behavior by setting an error handler-- anytime you get an error, instead of giving back the console, will freeze it...and I didn't follow  
+  
+```{r}
+
+# traceback
+rm(x)
+mean(x)
+traceback() # tells you where the error occurs, in this case, right at the top of the mean function
+
+# 
+rm(x)
+rm(y)
+lm(y~x)   # x and y don't exists
+traceback()
+```
+
+```{r}
+# debug
+
+debug(lm)
+lm( y~x )
+# first prints out whole function body
+# then have browser below, which is just like a workspace
+# hit "n" then enter and it runs the next line
+# keep hitting n-ENTER until you find the issue
+
+```
+
+```{r}
+
+# recover
+
+# set the global option in this R session
+# then when there's an error, it doesn't go to the console, it gives you choices
+options(error = recover)
+
+read.csv("nosuchfile")
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+  
+  
+
+
+
 # Module 4
 
 
