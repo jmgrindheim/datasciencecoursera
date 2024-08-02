@@ -545,13 +545,110 @@ read.csv("nosuchfile")
 
 ```
 
+## Programming Assignment 2: Lexical Scoping
+* This second programming assignment will require you to write an R function that is able to cache potentially time-consuming computations. For example, taking the mean of a numeric vector is typically a fast operation. However, for a very long vector, it may take too long to compute the mean, especially if it has to be computed repeatedly (e.g. in a loop). If the contents of a vector are not changing, it may make sense to cache the value of the mean so that when we need it again, it can be looked up in the cache rather than recomputed. In this Programming Assignment you will take advantage of the scoping rules of the R language and how they can be manipulated to preserve state inside of an R object.  
+
+### Example: Caching the Mean of a Vector
+* In this example we introduce the <<- operator which can be used to assign a value to an object in an environment that is different from the current environment. Below are two functions that are used to create a special object that stores a numeric vector and caches its mean.  
+  * The first function, makeVector creates a special "vector", which is really a list containing a function to  
+    * set the value of the vector  
+    * get the value of the vector  
+    * set the value of the mean  
+    * get the value of the mean  
+    
 ```{r}
+# This function makes a vector, which is really a list of 4 functions
+makeVector <- function(x = numeric()) {
+  # init
+  toReturn = list()
+  # meat an pototatoes
+  m <- NULL
+  set <- function(y) {
+    x <<- y
+    m <<- NULL
+  }
+  get <- function() x
+  setmean <- function(mean){ m <<- mean } 
+  getmean <- function(){ m } 
+  # finalize
+  toReturn[[ "set" ]] = set
+  toReturn[[ "get" ]] = get
+  toReturn[[ "setmean" ]] = setmean
+  toReturn[[ "getmean" ]] = getmean
+  
+  return(toReturn) }
+
+# The following function calculates the mean of the special "vector" created with the above function. 
+# However, it first checks to see if the mean has already been calculated. 
+# If so, it gets the mean from the cache and skips the computation. 
+# Otherwise, it calculates the mean of the data and sets the value of the mean in the cache via the setmean function.
+cachemean <- function(x, ...) {
+
+        m <- x$getmean()
+        if(!is.null(m)) {
+                message("getting cached data")
+                return(m)
+        }
+        data <- x$get()
+        m <- mean(data, ...)
+        x$setmean(m)
+        m
+}
+
 
 ```
 
+### assignment: Caching the inverse of a matrix
+
 ```{r}
 
+
+# This function makes a vector, which is really a list of 4 functions
+makeCacheMatrix <- function( m = matrix() ) {
+  # init
+  toReturn = list()
+  i <- NULL # inverse
+  
+  # FUN1:  set the matrix
+  set <- function( matrix ) { 
+    m <<- matrix
+    i <<- NULL
+  }
+  # FUN2:  get the value of a vector
+  get <- function(){ m } 
+  # FUN3: set the value of the inverse of the matrix
+  set.inverse <- function( inverse ){ i <<- inverse } 
+  # FUN4: get value of the mean
+  get.inverse <- function(){ i } 
+  
+  # finalize
+  toReturn[[ "set" ]] = set
+  toReturn[[ "get" ]] = get
+  toReturn[[ "set.inverse" ]] = set.inverse
+  toReturn[[ "get.inverse" ]] = get.inverse
+  
+  return(toReturn) }
+
+
+cacheSolve <- function(x = makeCacheMatrix , ...) {
+
+        m <- x$get.inverse()
+        if(!is.null(m)) {
+                message("getting cached data")
+                return(m)
+        }
+        data <- x$get()
+        # calculate the inverse (whatever that is, documentation could be better Roger Peng!)
+        # using matrix multiplication
+  
+        m <- solve(data)  %*% data
+        x$set.inverse(m)
+        
+        return(m)
+}
+
 ```
+
 
   
   
@@ -559,7 +656,67 @@ read.csv("nosuchfile")
 
 
 # Module 4
+* **data simulation**
+  * **generating random numbers**  
+    * generating random numbers have functions that start with 4 letters
+      * r for random number generateions
+      * d for density  
+      * p for cumulative distribution  
+      * q for quantile function  
+    * need to set a seed becuase numbers are not actually random, so if want to generate same set of random numbers, can set seed first 
+    * **rnorm** 
+      * generates normal variates with given mean and distribution
+    * **dnorm** 
+      * evaluate the normal probability density (with a given mean/SD) at a point (or vector of points)
+    * **pnorm**  
+      * evaluate the cumulative distribution fucntion for a normal distribution
+    * **qnorm**  
+      * 
+  * **rpois**  
+    * generate randome Poisson variates with a given rate  
+  
+```{r}
+set.seed( "seed" = 1 )
+rnorm(
+  "n" = 10
+  , "mean" = 10
+  , "sd" = 2
 
+)
+set.seed( "seed" = 1 ) # have to call this right beofre rnorm to allow to get same set
+rnorm(
+  "n" = 10
+  , "mean" = 10
+  , "sd" = 2
+
+)
+rnorm(
+  "n" = 10
+  , "mean" = 10
+  , "sd" = 2
+
+)
+```
+
+## quiz
+
+```{r}
+# read in ddata
+outcome <- read.csv(
+  here::here(
+    "rawdata"
+    , "002.R_programming"
+    , "module.4"
+    , "outcome-of-care-measures.csv"
+  )
+  ,  colClasses = "character"
+)
+
+# convert column of interest to numeric
+outcome[, 11] <- as.numeric(outcome[, 11])
+ hist(outcome[, 11])
+
+```
 
 
 # Session info
