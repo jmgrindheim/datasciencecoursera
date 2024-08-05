@@ -1,0 +1,216 @@
+---
+title: "Coursera: getting and cleaning data"
+author: "Jessica Grindheim"
+date: '`r Sys.Date()`'
+output:
+  html_document:
+    fig_width: 7
+    fig_height: 6
+    fig_caption: true
+    toc: yes
+    toc_float: true
+    toc_depth: 6
+    df_print: paged
+  pdf_document: 
+    toc: yes
+    toc_depth: 6
+latex_engine: xelatex
+geometry: left = 1in, right = 1in, top = 1in, bottom = 1in
+---
+
+```{r setup , include=FALSE}
+knitr::opts_chunk$set(
+    echo = F
+  , message = F
+  , warning = F
+  , fig.fullwidth = T
+  , fig.align = "center"
+  , fig.margin = T
+  , tidy.opts = list(width.cutoff=80)
+  ) 
+
+# the following colors the boxes in knit html
+# https://www.r-bloggers.com/2017/06/pretty-errors-warnings-and-messages-in-r-markdown/
+knitr::knit_hooks$set(
+   error = function(x, options) {
+     paste('\n\n<div class="alert alert-danger">',
+           gsub('##', '\n', gsub('^##\ Error', '**Error**', x)),
+           '</div>', sep = '\n')
+   },
+   warning = function(x, options) {
+     paste('\n\n<div class="alert alert-warning">',
+           gsub('##', '\n', gsub('^##\ Warning:', '**Warning**', x)),
+           '</div>', sep = '\n')
+   },
+   message = function(x, options) {
+     paste('\n\n<div class="alert alert-info">',
+           gsub('##', '\n', x),
+           '</div>', sep = '\n')
+   }
+)
+```
+
+
+# Background
+
+* **Goals**  
+  * Take notes during the course  
+  * Do necessary exercises  
+  
+
+
+
+```{r, include = F}
+library("here")
+source(here::here("scripts","003.getting_and_cleaning_data","003.config.R"))
+
+```
+
+# Module 1- Raw and processed data
+
+* **download.file**  
+  * dateDownloaded = date()   
+  * if https on mac, use method = "curl"  
+* **reading xml**  
+  * exensible markup language  
+  * frequently used to store structured data  
+  * XML::xmlTreeParse    
+    * rootNode = XML::xmlRoot() to get root node  
+    * XML::xpathSapply( rootNode, xmlValue)  # nice to grab all the values out  
+* **reading JSON**  
+  * package: jsonlite  
+  
+* **data.table**  
+  * faster and more efficient that data.table  
+  * inherits from data.frame, so functions that you use on data.frames should still work  
+  * but requires learning of new syntax  
+  
+## dplyr
+*  dplyr supplies five 'verbs' that cover most fundamental data manipulation tasks: select(), filter(), arrange(), mutate(), and summarize()  
+  * cran is tibble I'm playing with in a swirl session    
+
+  
+    
+### select (for columns)
+
+```{r}
+# select columns
+# to select only the ip_id, package, and country variables from the cran dataset.  
+select(cran, ip_id, package, country) 
+
+# select columns with : 
+# to select all columns starting from r_arch and ending with country.  
+select(cran, r_arch:country) 
+
+# omit columns
+# to omit the time column  
+select(cran, -time) 
+  
+```
+
+### filter (for rows)
+
+  
+```{r}
+# filter rows based on column value 
+filter(cran, package == "swirl")    
+# filter rows based on 2 column values
+filter(cran, r_version == "3.1.1", country== "US")   
+# filter rows based on x column OR y column
+filter(cran, country == "US" | country == "IN")  
+# filter nas with is.na() function**  
+
+```
+
+### arrange (to order rows)  
+
+
+```{r}
+# sort ascending order
+  arrange(cran2, ip_id)  
+# sort descending order
+  arrange(cran2, desc(ip_id) ) 
+# sort multiple variables
+  arrange(cran2, country, desc(r_version), ip_id)  
+```
+
+### mutate to create a new variable  
+
+```{r}
+# create a new column
+mutate(cran3, size_mb = size / 2^20)  
+
+# create 2 new columns, one based off of the first column!
+mutate(cran3, size_mb = size / 2^20, size_gb = size_mb / 2^10 )  
+
+```
+
+### summarize and group_by
+**summarize** collapses the dataset into a single row. More powerful when applied to grouped data.    
+
+```{r}
+# summarize a column
+summarize(cran, avg_bytes = mean(size))  
+
+# summarize a column after grouping by another column
+summarize(cran, avg_bytes = mean(size))  
+
+# group by 1 variable
+by_package <- group_by(cran, package)  
+
+# summarize an already grouped tibble (not sure it has to be a tibble to work)
+summarize( by_package, mean(size))  
+```
+
+```{r}
+
+
+# Compute four values, in the following order, from
+# the grouped data:
+#
+# 1. count = n()
+# 2. unique = n_distinct(ip_id)
+# 3. countries = n_distinct(country)
+# 4. avg_bytes = mean(size)
+#
+# A few thing to be careful of:
+#
+# 1. Separate arguments by commas
+# 2. Make sure you have a closing parenthesis
+# 3. Check your spelling!
+# 4. Store the result in pack_sum (for 'package summary')
+#
+# You should also take a look at ?n and ?n_distinct, so
+# that you really understand what is going on.
+
+pack_sum <- summarize(by_package
+                      , count = n()
+                      , unique = dplyr::n_distinct(ip_id) 
+                      , countries = dplyr::n_distinct(country)
+                      , avg_bytes = mean(size) 
+                      )
+
+```
+
+  
+    
+    
+    
+    
+    
+
+
+# Module 2
+
+# Module 3
+
+
+# Module 4# Session info
+
+```{r}
+
+sessionInfo()
+knitr::knit_exit()
+```
+
+

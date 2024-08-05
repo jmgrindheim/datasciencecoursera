@@ -698,25 +698,223 @@ rnorm(
 )
 ```
 
-## quiz
+## Programming Assignmnet 3: Hospital
+
+* outcomes data: outcome-of-care-measures.csv  
+* hospital data: hospital-data.csv  
+
+### Finding the best hospital in a state
 
 ```{r}
-# read in ddata
-outcome <- read.csv(
-  here::here(
-    "rawdata"
-    , "002.R_programming"
-    , "module.4"
-    , "outcome-of-care-measures.csv"
+
+best = function( state = "SC" , outcome = "heart attack" ){
+  # The function reads the outcome-of-care-measures.csv file and returns a character vector with the name of the hospital that has the best (i.e. lowest) 30-day mortality for the specified outcome in that state. 
+  
+  # Useful functions
+  '%!in%' <- function(x,y)!('%in%'(x,y))
+  
+  ## Read outcome data
+  D <- read.csv(
+    here::here(
+      "rawdata"
+      , "002.R_programming"
+      , "module.4"
+      , "outcome-of-care-measures.csv"
+    )
+    ,  colClasses = "character"
   )
-  ,  colClasses = "character"
-)
+  ## find column of interest
+  choices = colnames(D)[ base::startsWith( x = colnames(D), prefix = "Hospital.30.Day.Death..Mortality..Rates.from.")] # mortality rate choices
+  find = gsub(" ", ".", outcome)
+  choices = choices[ grepl(find, choices, ignore.case = T  ) ]
+  if( length(choices) != 1){ stop("Trouble finding the correct column to look for mortality rates data") }
+  c.outcome = choices
+  
+  ## convert column of interest to numeric
+  D[, c.outcome] <- as.numeric( D[, c.outcome] )
+ # filter NAs
+  D =  D[!is.na(D[,c.outcome]) , ]
+  
+  ## Check that state and outcome are valid
+  if( state %!in% D$State){ stop("state provided (", state, ') not found in outcomes State column') }
+  
+  ## Return hospital name in that state with lowest 30-day death
+  # filter to state
+  D = D[ D[,"State"] == state,]
+    # sort by rank
+   D = D[order(D[,c.outcome]),]
+  # debug
+    D[,c("State", "Hospital.Name", c.outcome)]
+    
+  # get resultes
+  best.hospital = D[
+     D[,c.outcome] == min(D[,c.outcome] )
+    , "Hospital.Name"]
+  
+  best.hospital = best.hospital[ order(best.hospital) ] # sort alphabetically
+  best.hospital = best.hospital[1] # choose first
+  ## return best hospital
+  return(best.hospital)
+}
 
-# convert column of interest to numeric
-outcome[, 11] <- as.numeric(outcome[, 11])
- hist(outcome[, 11])
-
+best("SC", "heart attack")
+best("NY", "pneumonia")
+best("AK", "pneumonia")
 ```
+### Ranking hospitals by outcome in a state
+
+```{r}
+# The function reads the outcome-of-care-measures.csv file and returns a character vector with the name of the hospital that has the ranking specified by the num argument
+rankhospital = function( state = "NC", outcome = "heart attack", num = "worst" ){
+  
+  # Useful functions
+  '%!in%' <- function(x,y)!('%in%'(x,y))
+  
+  ## Read outcome data
+  D <- read.csv(
+    here::here(
+      "rawdata"
+      , "002.R_programming"
+      , "module.4"
+      , "outcome-of-care-measures.csv"
+    )
+    ,  colClasses = "character"
+  )
+  ## find column of interest
+  choices = colnames(D)[ base::startsWith( x = colnames(D), prefix = "Hospital.30.Day.Death..Mortality..Rates.from.")] # mortality rate choices
+  find = gsub(" ", ".", outcome)
+  choices = choices[ grepl(find, choices, ignore.case = T  ) ]
+  if( length(choices) != 1){ stop("invalid outcome") }
+  c.outcome = choices
+  
+  ## convert column of interest to numeric
+  D[, c.outcome] <- as.numeric(D[, c.outcome])
+  # filter NAs
+  D =  D[!is.na(D[,c.outcome]) , ]
+  
+  ## Check that state and outcome are valid
+  if( state %!in% D$State){ stop("invalid state") }
+  
+  # filter to state
+  D = D[ D[,"State"] == state,]
+  
+  # sort by rank
+  D = D[order(D[,c.outcome], D[,"Hospital.Name"]),]
+  # debug
+  D[,c("State", "Hospital.Name", c.outcome)]
+  
+  # get result best on rank or best/worse score
+  
+  if( num %!in% c("best","worst") ){ 
+    if( num > nrow(D) ){ return( NA ) } # If the number given by num is larger than the number of hospitals in that state, then the function should return NA.
+    hospital = D[ num ,"Hospital.Name"]  
+  }
+
+  # convert best and worst to scores
+  if( num %in% c("best", "worst")){
+    if( num == "worst" ){  hospital = D[ nrow(D) ,"Hospital.Name"]   }
+    if( num == "best" ){  hospital = D[  1 ,"Hospital.Name"]  }
+   
+  }
+  
+
+  
+  ## return hospital with given ranke
+  
+  return(hospital)
+  
+}
+
+rankhospital("NC", "heart attack", "worst")
+
+rankhospital("WA", "heart attack", 7)
+rankhospital("TX", "pneumonia", 10)
+rankhospital("NY", "heart attack", 7)
+```
+
+
+
+### Ranking hospitals in all states
+
+```{r}
+# The function reads the outcome-of-care-measures.csv file and returns a character vector with the name of the hospital that has the ranking specified by the num argument
+
+rankall = function( outcome = "heart attack", num = "best" ){
+  
+  # Useful functions
+  '%!in%' <- function(x,y)!('%in%'(x,y))
+  
+  ## Read outcome data
+  D <- read.csv(
+    here::here(
+      "rawdata"
+      , "002.R_programming"
+      , "module.4"
+      , "outcome-of-care-measures.csv"
+    )
+    ,  colClasses = "character"
+  )
+  # factorize state
+  D$State = factor( D$State, levels = unique(D$State)[ order(unique(D$State))]  )
+  
+  ## find column of interest
+  choices = colnames(D)[ base::startsWith( x = colnames(D), prefix = "Hospital.30.Day.Death..Mortality..Rates.from.")] # mortality rate choices
+  find = gsub(" ", ".", outcome)
+  choices = choices[ grepl(find, choices, ignore.case = T  ) ]
+  if( length(choices) != 1){ stop("invalid outcome") }
+  c.outcome = choices
+  ## convert column of interest to numeric
+  D[, c.outcome] <- as.numeric(D[, c.outcome])
+  # filter NAs
+  D =  D[!is.na(D[,c.outcome]) , ]
+  # sort by rank
+  D = D[order(D[,c.outcome], D[,"Hospital.Name"]),]
+  
+  # get results per state
+  states = levels(D$State)
+  tRes = sapply( as.character(states), function(state){
+    # data
+    tDat = D
+    # filter to state
+    tDat = tDat[ tDat[,"State"] == state,]
+    
+    # debug
+    # tDat[,c("State", "Hospital.Name", c.outcome)]
+    
+    
+    # get result best on rank or best/worse score
+    if( num %!in% c("best","worst") ){ hospital = tDat[ num ,"Hospital.Name"]  }
+    
+    # convert best and worst to scores
+    if( num %in% c("best", "worst")){
+      if( num == "worst" ){  hospital = tDat[ nrow(tDat) ,"Hospital.Name"]   }
+      if( num == "best" ){  hospital = tDat[  1 ,"Hospital.Name"]  }
+      
+    }
+    
+    return( 
+      list(
+        "hospital" = hospital
+        , "state" = state
+      ))
+  })
+  tRes = data.frame(t(tRes))
+  
+  
+  
+return(tRes) }
+head(rankall("heart attack", 20), 10)
+tail(rankall("pneumonia", "worst"), 3)
+
+
+r <- rankall("heart attack", 4)
+as.character(subset(r, state == "HI")$hospital)
+
+
+r <- rankall("pneumonia", "worst")
+as.character(subset(r, state == "NJ")$hospital)
+```
+
 
 
 # Session info
